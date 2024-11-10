@@ -1,18 +1,18 @@
-% AUDIO STENOGRAPHY TOOL
+% AUDIO STEGANOGRAPHY TOOL
 % MATLAB Script hiding a text message in an audio file.
-% Performs Least Significant Bit (LSB) Method
+% Performs LSB or Phase Coding Method
 % 
 
 close all; clear all; clc;
-lsb = LSBStegnographyContainer;
-pc = PhaseCodingStenographyContainer;
+lsb = LSBMatchingContainer;
+pc = PhaseCodingContainer;
 
 % Print welcome page
 disp("============================");
-fprintf("WELCOME TO AUDIO STENOGRAPHY\n");
+fprintf("WELCOME TO AUDIO STEGANOGRAPHY\n");
 fprintf("============================\n")
 
-% Get stenography algorithm
+% Get steganography algorithm
 algorithm = stegSelection();
 
 % Get user function choice
@@ -85,11 +85,11 @@ elseif strcmp(choice,'D') % Decrypt audio file
 end
 
 %% 
-% Select stenography algorithm
+% Select steganography algorithm
 function algorithm = stegSelection()
     validInputs = [1,2];
     disp('Select an algorithm to use.');
-    disp('1: LSB Stenography');
+    disp('1: LSB Matching');
     disp('2: Phase Coding');
     choice = input('Enter selection: ');
     while ~any(ismember(choice,validInputs))

@@ -1,7 +1,10 @@
-% Phase Coding audio stenography functions
+% Phase Coding audio steganography functions
 % Alter audio's phase to embed each bit of a secret message
+%
+% Code based off @ktekeli phase_enc & phase_dec
+% https://github.com/ktekeli/audio-steganography-algorithms/tree/master/04-Phase-Coding
 
-classdef PhaseCodingStenographyContainer
+classdef PhaseCodingContainer
     methods(Static)
         function phaseEncrypt(input, msg, output)
             % Process hidden message
