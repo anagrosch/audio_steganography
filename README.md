@@ -22,10 +22,10 @@ hardly noticable to humans for hiding a secret message.
     >Modifications using this method cannot be audibly perceived by humans, which addresses the noise added by LSB.
 
     >The cover audio file divided into segments is converted to the frequency domain by applying the Fast Fourier Transform (FFT).
-    >The secret message is embedded into the first segment's phase components, and the phase shifts of the remaining segments are adjusted accordingly.
+    >The secret message is embedded into the each segment's phase components.
     >Applying the Inverse Fast Fourier Transform (IFFT) converts the data back to the time domain for outputting.
 
-    >Decryption requires segmenting the embedded audio file and reading the phase shifts of the first segment.
+    >Decryption requires segmenting the embedded audio file and reading the phase shifts of each segment.
 
 ## Usage
 
@@ -39,11 +39,15 @@ maximum characters permitted depends on the algorithm.
 
 **LSB Matching**
 
-$$max = size_{audio}/7 - 1$$
+$$max = size_{audio} / 7 - 1$$
 
 **Phase Coding**
 
-$$max = \lfloor (L/2  - 14)/7 \rfloor = 583$$
+$$max = \lfloor (L / 4  * (S - 1)) / 12 \rfloor$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where $S = size_{audio} / L$, or
+
+$$max = (2^{24} - 1) / 12$$
 
 ### Input File Processing
 
@@ -63,3 +67,4 @@ The secret message is converted to a binary string where the ascii code of each 
 
 - [Audio Steganography using Phase Coding](https://medium.com/@achyuta.katta/audio-steganography-using-phase-encoding-d13f100380f2)
 
+- [Hamming Code in Computer Network](https://www.geeksforgeeks.org/hamming-code-in-computer-network/)

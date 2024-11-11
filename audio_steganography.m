@@ -116,7 +116,7 @@ function choice = funcSelection()
     disp('E: encrypt audio file');
     disp('D: decrypt audio file')
     choice = upper(input('Enter selection: ',"s"));
-    while ~ismember(choice,validInputs)
+    while ~any(ismember(choice,validInputs))
         choice = upper(input('Invalid selection. Try again (Ctrl+C to quit): ',"s"));
     end
 
@@ -175,11 +175,17 @@ function max = getMaxLen(algorithm, input)
     if strcmp(algorithm,'_lsb')
         max = input.dsize/7 - 1; % save 1 character for end-of-text (0x3)
     elseif strcmp(algorithm,'_pc')
-        max = 583;
-        % L = 8192; max written to = L/2 = 4096
-        % # of bits for msg length = 14
-        % max bits for msg = 4096 - 14 = 4082
-        % max char = floor(4082/7) = 583
+        L = 8192;
+        S = input.dsize / L;
+        max = floor((L/4*(S-1))/12);
+        % max written to = L/4 = 2048 (only write in low-freq of segment)
+        % max bits for msg = L/4 * (S - 1) (i.e. = 204800)
+        % max char = floor(204800/12) = 17066
+
+        % max 24-bits for msg length descriptor
+        if max*12 > (2^24)-1
+            max = ((2^24)-1)/12; %change max if video too large
+        end
     end
 end
 
