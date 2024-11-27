@@ -1,16 +1,20 @@
 % AUDIO STEGANOGRAPHY TOOL
 % MATLAB Script hiding a text message in an audio file.
-% Performs LSB or Phase Coding Method
+% Performs LSB Matching, Phase Coding, BBFEH Method(s)
 % 
 
 close all; clear all; clc;
 lsb = LSBMatchingContainer;
 pc = PhaseCodingContainer;
+bbfeh = BBFEchoHidingContainer;
+CLIPPING = false; %true=clip input, false=reselect input
+
+warning('off','backtrace'); %turn off warning backtraces
 
 % Print welcome page
-disp("============================");
+disp("==============================");
 fprintf("WELCOME TO AUDIO STEGANOGRAPHY\n");
-fprintf("============================\n")
+fprintf("==============================\n")
 
 % Get steganography algorithm
 algorithm = stegSelection();
@@ -30,7 +34,7 @@ audioFiles = append('Audio Files (',validFiles,')');
                                                     audioFiles},...
                                                     'Select audio file');
 if isequal(audioInput.filename,0)
-    disp('User selected cancel');
+    disp('User selected cancel.');
     return
 end
 audioInput.fullfile = fullfile(audioInput.path,audioInput.filename);
@@ -39,13 +43,19 @@ audioInput.fullfile = fullfile(audioInput.path,audioInput.filename);
 % Read audio data
 if strcmp(algorithm,'_lsb')
     x = lsb.readAudioData(audioInput);
+    L = 0; %L unused -> set to 0
 elseif strcmp(algorithm,'_pc')
     x = pc.readAudioData(audioInput);
+    L = 8192; %segment length
+elseif strcmp(algorithm,'_bbfeh')
+    x = bbfeh.readAudioData(audioInput);
+    L = 12*1024; %segment length (for 12-bit)
 end
 
 % Play input audio
-fprintf("Playing '%s'...\n\n", audioInput.filename);
-%playClip(audioInput.fullfile);
+fprintf("Playing '%s'...", audioInput.filename);
+playClip(audioInput.fullfile);
+fprintf("Done\n\n");
 
 outPath = mkOutputDir(); %create directory for output files
 
@@ -57,27 +67,35 @@ if strcmp(choice,'E')
     output.fullfile = fullfile(outPath,output.filename);
 
     % Calculate max hidden characters based on audio file size
-    max = getMaxLen(algorithm,x);
+    max = getMaxLen(algorithm,L,x);
     
     % Get secret message
-    h = getSecretMsg(max);
+    h = getSecretMsg(max, CLIPPING);
+    if h == -1
+        return
+    end
     
     % Encrypt hidden msg in audio input
     if strcmp(algorithm,'_lsb')
         lsb.lsbEncrypt(x,h,output);
     elseif strcmp(algorithm,'_pc')
-        pc.phaseEncrypt(x,h,output);
+        pc.phaseEncrypt(x,h,output,L);
+    elseif strcmp(algorithm,'_bbfeh')
+        bbfeh.bbfehEncrypt(x,h,output,L);
     end
 
     % Play output audio
-    fprintf("Playing output '%s'...\n\n", output.filename);
+    fprintf("Playing output '%s'...", output.filename);
     playClip(output.fullfile);
+    fprintf("Done\n\n");
 
 elseif strcmp(choice,'D') % Decrypt audio file
     if strcmp(algorithm,'_lsb')
-        plaintext = lsb.lsbDecrypt(x, audioInput.ext);
+        plaintext = lsb.lsbDecrypt(x,audioInput.ext);
     elseif strcmp(algorithm,'_pc')
-        plaintext = pc.phaseDecrypt(x);
+        plaintext = pc.phaseDecrypt(x,L);
+    elseif strcmp(algorithm,'_bbfeh')
+        plaintext = bbfeh.bbfehDecrypt(x,L);
     end
 
     % Preview plaintext
@@ -87,25 +105,29 @@ end
 %% 
 % Select steganography algorithm
 function algorithm = stegSelection()
-    validInputs = [1,2];
+    validInputs = [1,2,3];
     disp('Select an algorithm to use.');
-    disp('1: LSB Matching');
-    disp('2: Phase Coding');
+    disp('----------------------');
+    fprintf("| %-19s|\n","1: LSB Matching");
+    fprintf("| %-19s|\n","2: Phase Coding");
+    fprintf("| %-19s|\n","3: BBF Echo Hiding");
+    disp('----------------------');
+
     choice = input('Enter selection: ');
     while ~any(ismember(choice,validInputs))
-        choice = input('Invalid selection. Try again (Ctrl+C to quit): ');
+        warning('Invalid selection.')
+        choice = input('Enter selection (Ctrl+C to quit): ');
     end
 
     if choice == 1
-        disp('------------');
-        disp('LSB Selected');
-        disp('------------');
+        fprintf("LSB Selected\n\n");
         algorithm = '_lsb';
     elseif choice == 2
-        disp('---------------------')
-        disp('Phase Coding Selected')
-        disp('---------------------')
+        fprintf("Phase Coding Selected\n\n")
         algorithm = '_pc';
+    elseif choice == 3
+        fprintf("BBF Echo Hiding Selected\n\n")
+        algorithm = '_bbfeh';
     end
 end
 
@@ -113,35 +135,40 @@ end
 function choice = funcSelection()
     validInputs = ['E','D'];
     disp('Would you like to encrypt or decrypt an audio file?');
-    disp('E: encrypt audio file');
-    disp('D: decrypt audio file')
+    disp('-------------------------');
+    fprintf("| %-22s|\n","E: encrypt audio file");
+    fprintf("| %-22s|\n","D: decrypt audio file");
+    disp('-------------------------');
+
     choice = upper(input('Enter selection: ',"s"));
     while ~any(ismember(choice,validInputs))
-        choice = upper(input('Invalid selection. Try again (Ctrl+C to quit): ',"s"));
+        warning('Invalid selection.');
+        choice = upper(input('Enter selection (Ctrl+C to quit): ',"s"));
     end
 
     % Print running selection
     if strcmp(choice,'E')
-        disp('------------------------------');
+        fprintf('\n----------------------------\n');
         disp('STARTING ENCRYPTION PROCESS');
-        disp('------------------------------');
+        disp('----------------------------');
     
     elseif strcmp(choice,'D')
-        disp('------------------------------');
+        fprintf('\n----------------------------\n');
         disp('STARTING DECRYPTION PROCESS');
-        disp('------------------------------');
+        disp('----------------------------');
     end
 end
 
 % Retrieve hidden message
-function h = getSecretMsg(maxLength)
+function h = getSecretMsg(maxLength, CLIPPING)
     % Get message file from user
     disp('Select hidden message file');
     [hiddenMsg.filename, hiddenMsg.path] = uigetfile({'*.txt',...
                                       'Audio Files (*.txt)'},...
                                       'Select hidden message file');
     if isequal(hiddenMsg.filename,0)
-        disp('User selected cancel');
+        disp('User selected cancel.');
+        h = -1;
         return
     end
 
@@ -151,15 +178,22 @@ function h = getSecretMsg(maxLength)
     [h,~] = readBinData(hiddenMsg);
     
     % Check message is under max characters
-    while length(h) > maxLength
-        fprintf("Hidden message exceeded limit: (%d) characters",maxLength);
+    if (length(h) > maxLength) && (CLIPPING == true)
+        h = h(1:maxLength);
+        warning("Hidden message exceeded %d character limit. " + ...
+            "Clipped message: '%s'", maxLength, char(h)');
+    end
+
+    while (length(h) > maxLength) && (CLIPPING == false)
+        warning("Hidden message exceeded limit: (%d) characters", maxLength);
 
         % Get secret message from user
         [hiddenMsg.filename, hiddenMsg.path] = uigetfile({'*.txt',...
                                       'Audio Files (*.txt)'},...
                                       'Select hidden message file');
         if isequal(hiddenMsg.filename,0)
-            disp('User selected cancel');
+            disp('User selected cancel.');
+            h = -1;
             return
         end
 
@@ -171,11 +205,10 @@ function h = getSecretMsg(maxLength)
 end
 
 % Determine max length for secret message
-function max = getMaxLen(algorithm, input)
+function max = getMaxLen(algorithm, L, input)
     if strcmp(algorithm,'_lsb')
         max = input.dsize/7 - 1; % save 1 character for end-of-text (0x3)
     elseif strcmp(algorithm,'_pc')
-        L = 8192;
         S = input.dsize / L;
         max = floor((L/4*(S-1))/12);
         % max written to = L/4 = 2048 (only write in low-freq of segment)
@@ -186,6 +219,8 @@ function max = getMaxLen(algorithm, input)
         if max*12 > (2^24)-1
             max = ((2^24)-1)/12; %change max if video too large
         end
+    elseif strcmp(algorithm,'_bbfeh')
+        max = floor(input.dsize/L/12); %12-bit char
     end
 end
 

@@ -7,57 +7,114 @@ hardly noticable to humans for hiding a secret message.
 
 1. Least Significant Bit (LSB) Matching
 
-    >The LSB algorithm focuses on minimizing the alterations made to the cover media to avoid detection.
+    >The LSB algorithm focuses on minimizing the alterations made to the
+    >cover media to avoid detection.
 
-    >The least significant bit of the audio file's first `m` bytes are modified to match the secret message, where `m` represents the length of the secret message in binary.
+    >The least significant bit of the audio file's first `m` bytes are
+    >modified to match the secret message, where `m` represents the length
+    >of the secret message in binary.
 
-    >LSB matching randomly adds or subtracts 1 to each LSB that differs from the secret message.
+    >LSB matching randomly adds or subtracts 1 to each LSB that differs
+    >from the secret message.
     >This method creates a more secure alternative to standard LSB replacement.
 
-    >Decryption simply requires reading the LSB of the first `m` bytes of the embedded audio file.
+    >Decryption simply requires reading the LSB of the first `m` bytes of
+    >the embedded audio file.
 
 2. Phase Coding
 
     >Phase Coding hides information in the phase component of an audio signal.
-    >Modifications using this method cannot be audibly perceived by humans, which addresses the noise added by LSB.
+    >Modifications using this method cannot be audibly perceived by humans,
+    >which addresses the noise added by LSB.
 
-    >The cover audio file divided into segments is converted to the frequency domain by applying the Fast Fourier Transform (FFT).
+    >The cover audio file divided into segments is converted to the
+    >frequency domain by applying the Fast Fourier Transform (FFT).
     >The secret message is embedded into the each segment's phase components.
-    >Applying the Inverse Fast Fourier Transform (IFFT) converts the data back to the time domain for outputting.
+    >Applying the Inverse Fast Fourier Transform (IFFT) converts the data
+    >back to the time domain for outputting.
 
-    >Decryption requires segmenting the embedded audio file and reading the phase shifts of each segment.
+    >Decryption requires segmenting the embedded audio file and reading
+    >the phase shifts of each segment.
 
-## Usage
+3. Bipolar Backward-Forward Echo Hiding
 
-### Input Files
+    >Echo hiding embeds information in a signal by adding unnoticable echos
+    >corresponding to the bits of the message.
+    >Symmetrical echo impulses of bipolar backward-forward echo hiding
+    >increase its robustness compared to other echo hiding methods.
+    
+    >Delayed versions of the cover audio based on the 0-bit and 1-bit echo
+    >kernels are added onto the cover audio with a mixer signal created from
+    >the hidden message.
+
+    >Decryption consists of segmenting the audio file and retrieving the
+    delay points of each segment to determine the message bit value.
+
+## Secret Message Input
+
+This code only supports `.txt` files for the secret message input.
+Each character is read as a binary string of its ascii code.
+
+### LSB Matching
+
+Each character requires 7 bits.
+The maximum characters permitted is calculated by
+
+$$max = \frac{size_{cover}}{7} - 1$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where $size_{cover}$
+represents the size of the cover audio file in bytes.
+
+### Phase Coding
+
+Each character requires 12 bits.
+The maximum characters permitted is calculated by 
+
+$$max_1 = \lfloor\frac{\frac{L}{4}  * (S - 1)}{12}\rfloor$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where
+$S = \frac{size_{cover}}{L}$ and $size_{cover}$ respresents size of the cover
+audio sampled at 44.1 kHz.
+
+If $max_1 > 2^{24} - 1$, then the max is calculated by
+
+$$max_2 = \frac{2^{24} - 1}{12}$$
+
+### Bipolar Backward-Forward Echo Hiding
+
+Each character requires 12 bits.
+The maximum characters permitted is calculated by
+
+$$max = \frac{size_{cover}}{L/12}$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where $size_{cover}$
+represents the size of the cover audio sampled at 44.1 kHz.
+
+
+## Cover Audio Input
 
 This code supports `.wav` and/or `.mp3` files for the cover audio input, 
 depending on the algorithm.
+The formatting of the data depends on the algorithm implemented.
 
-The secret message to be hidden is read in binary from a `.txt` file. The 
-maximum characters permitted depends on the algorithm.
+### LSB Matching
 
-**LSB Matching**
+The cover audio file data is retrieved as binary data.
+An end-of-text descriptor is embedded after the secret message.
 
-$$max = size_{audio} / 7 - 1$$
+### Phase Coding
 
-**Phase Coding**
+The cover audio is retrieved as audio data with a sample rate of 44.1 kHz.
+A 24-bit binary string describing the length of the binary message is embedded
+in the first segment.
+Each binary string of the secret message is converted into an 8-bit binary
+string to implement 12-bit Hamming error correcting.
 
-$$max = \lfloor (L / 4  * (S - 1)) / 12 \rfloor$$
+### Bipolar Backward-Forward Echo Hiding
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where $S = size_{audio} / L$, or
-
-$$max = (2^{24} - 1) / 12$$
-
-### Input File Processing
-
-The cover audio file data is retrieved as binary data. The formatting of the data depends on the algorithm implemented.
-
-The secret message is converted to a binary string where the ascii code of each character is converted into a 7-bit binary string.
-
-**LSB Matching**: An end-of-text descriptor (0x3) is appended to the end of the secret message for decryption.
-
-**Phase Coding**: The length of the binary message as a 14-bit binary string is appended to the end of the secret message for decryption.
+The cover audio is retrieved as audio data with a sample of 44.1 kHz.
+Each binary string of the secret message is converted into an 8-bit binary
+string to implement 12-bit Hamming error correcting.
 
 ## References
 
@@ -66,5 +123,7 @@ The secret message is converted to a binary string where the ascii code of each 
 - [An Improved Phase Coding Audio Steganography Algorithm](https://arxiv.org/html/2408.13277v1)
 
 - [Audio Steganography using Phase Coding](https://medium.com/@achyuta.katta/audio-steganography-using-phase-encoding-d13f100380f2)
+
+- [A Comparison of Echo Hiding Methods](http://www.epstem.net/en/download/article-file/381457)
 
 - [Hamming Code in Computer Network](https://www.geeksforgeeks.org/hamming-code-in-computer-network/)

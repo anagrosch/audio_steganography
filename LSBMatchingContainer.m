@@ -9,7 +9,7 @@ classdef LSBMatchingContainer
             msg(end + 1) = 3; % add end-of-text
             msgBin = char(join(string(dec2bin(msg,7)),'')); %combine binary into 1 char array
 
-            disp('Encrypting audio file...');
+            fprintf("Encrypting audio file...");
             startPoint = 0; %embedding starting point
             if strcmp(output.ext,'.wav')
                 startPoint = 46; %start after header of .wav
@@ -32,6 +32,7 @@ classdef LSBMatchingContainer
                     end
                 end
             end
+            fprintf("Done\n\n");
             bin2File(ciphertext,output.fullfile);
         end
 
@@ -60,7 +61,7 @@ classdef LSBMatchingContainer
                 end
             end
             msg = msg(1:i/7-1); %remove empty elements
-            fprintf("Done");
+            fprintf("Done\n\n");
         
             % Convert msg to txt file
             bin2File(msg,fullfile('output','decrypted_lsb_msg.txt'));

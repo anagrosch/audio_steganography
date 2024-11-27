@@ -7,16 +7,15 @@
 
 classdef PhaseCodingContainer
     methods(Static)
-        function phaseEncrypt(input, msg, output)
+        function phaseEncrypt(input, msg, output, L)
             % Process hidden message
-            msg = PhaseCodingContainer.addParityBits(dec2bin(msg,8));
+            msg = HammingContainer.addParityBits(dec2bin(msg,8));
             m = 12*length(msg);
 
             % Get hidden message length
             msgBin = append(reshape(msg',1,[]),dec2bin(m,24)); %combine binary into 1 char array
 
             % Arrange audio signal into segments
-            L = 8192; %segment length
             N = floor(input.dsize/L); %num of segments
             S = reshape(input.data(1:N*L,1),L,N); %segments => columns
             
@@ -24,6 +23,7 @@ classdef PhaseCodingContainer
             X = fft(S);
             P = angle(X);
 
+            fprintf("Encrypting audio file...");
             % Convert msg data into phase shifts
             n = ceil(m/N); %msg bits per segment
             pad = ceil(m/N)*ceil(m/ceil(m/N))-m;
@@ -54,14 +54,14 @@ classdef PhaseCodingContainer
             Y = real(ifft(abs(X) .* exp(1i*outP)));
             y = reshape(Y,N*L,1);
             y = [y;input.data(N*L+1:input.dsize,1)];
+            fprintf("Done\n\n");
 
             audiowrite(output.fullfile,y,input.fs);
         end
 
         % Decrypt hidden message
-        function msg = phaseDecrypt(input)
+        function msg = phaseDecrypt(input, L)
             % Arrange audio signal into segments
-            L = 8192; %segment length
             N = floor(input.dsize/L); %num of segments
             S = reshape(input.data(1:N*L,1),L,N); %segments => columns
 
@@ -69,6 +69,7 @@ classdef PhaseCodingContainer
             X = fft(S);
             P = angle(X);
 
+            fprintf("Decrypting audio file...");
             % Read message length
             msgLen = char(zeros(1,24));
             for j=1:24
@@ -97,49 +98,12 @@ classdef PhaseCodingContainer
                 end
             end
             msg = reshape(msg(1:m),12,[])';
-            msg = PhaseCodingContainer.errorCheck(msg);
+            msg = HammingContainer.errorCheck(msg);
+            fprintf("Done\n\n");
 
             % Convert msg to txt file
             msg = bin2dec(msg);
             bin2File(msg,fullfile('output','decrypted_pc_msg.txt'));
-        end
-
-        % Add Hamming error checking
-        function updated = addParityBits(input)
-            updated = char(zeros(length(input),12));
-
-            for i=1:length(input)
-                updated(i,[3, 5, 6, 7, 9, 10, 11, 12]) = input(i,:);
-    
-                % Calculate parity bits
-                updated(i,1) = char('0'+mod(sum(updated(i,[3, 5, 7, 9, 11])), 2));
-                updated(i,2) = char('0'+mod(sum(updated(i,[3, 6, 7, 10, 11])), 2));
-                updated(i,4) = char('0'+mod(sum(updated(i,[5, 6, 7, 12])), 2));
-                updated(i,8) = char('0'+mod(sum(updated(i,[9, 10, 11, 12])), 2));
-            end
-        end
-
-        % Hamming error checking & correction
-        function data = errorCheck(input)
-            data = char(zeros(length(input),8));
-
-            for i=1:length(input)
-                % Check for errors
-                p1 = mod(sum(input(i,[1, 3, 5, 7, 9, 11])), 2);
-                p2 = mod(sum(input(i,[2, 3, 6, 7, 10, 11])), 2);
-                p4 = mod(sum(input(i,[4, 5, 6, 7, 12])), 2);
-                p8 = mod(sum(input(i,[8, 9, 10, 11, 12])), 2);
-    
-                % Determine incorrect bit
-                error = p1 * 1 + p2 * 2 + p4 * 4 + p8 * 8;
-    
-                % Correct bit if necessary
-                if error ~= 0
-                    input(i,error) = char('0'+mod(input(i,error) + 1, 2));
-                end
-                
-                data(i,:) = input(i,[3, 5, 6, 7, 9, 10, 11, 12]);
-            end
         end
 
         % Get data from audio file
