@@ -20,7 +20,7 @@ classdef BBFEchoHidingContainer
             end
             msgBin = msgBin - '0'; %convert string to array
 
-            fprintf("Encrypting audio file...");
+            fprintf("Embedding audio file...");
             % Create echo kernels (i)
             [h0,h1] = BBFEchoHidingContainer.mkEchoKernels();
 
@@ -43,6 +43,7 @@ classdef BBFEchoHidingContainer
             fprintf("Done\n\n");
 
             audiowrite(output.fullfile,x,input.fs);
+            fprintf("Output file created: '%s'\n",output.fullfile);
         end
 
         % Decrypt hidden message with BBFEH
@@ -54,7 +55,7 @@ classdef BBFEchoHidingContainer
             N = 12*floor(input.dsize/L/12); %num of segments
             S = reshape(input.data(1:N*L,1),L,N); %segments => columns
 
-            fprintf("Decrypting audio file...");
+            fprintf("Extracting message from audio file...");
             msg = char(zeros(1,N));
 
             for i=1:N
@@ -78,7 +79,7 @@ classdef BBFEchoHidingContainer
             fprintf("Done\n\n");
 
             % Convert msg to txt file
-            bin2File(msg,fullfile('output','decrypted_pc_msg.txt'));
+            bin2File(msg,fullfile('output','decrypted_bbfeh_msg.txt'));
         end
 
         % Create the echo kernels

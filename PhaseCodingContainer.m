@@ -23,7 +23,7 @@ classdef PhaseCodingContainer
             X = fft(S);
             P = angle(X);
 
-            fprintf("Encrypting audio file...");
+            fprintf("Embedding audio file...");
             % Convert msg data into phase shifts
             n = ceil(m/N); %msg bits per segment
             pad = ceil(m/N)*ceil(m/ceil(m/N))-m;
@@ -57,6 +57,7 @@ classdef PhaseCodingContainer
             fprintf("Done\n\n");
 
             audiowrite(output.fullfile,y,input.fs);
+            fprintf("Output file created: '%s'\n",output.fullfile);
         end
 
         % Decrypt hidden message
@@ -69,7 +70,7 @@ classdef PhaseCodingContainer
             X = fft(S);
             P = angle(X);
 
-            fprintf("Decrypting audio file...");
+            fprintf("Extracting message from audio file...");
             % Read message length
             msgLen = char(zeros(1,24));
             for j=1:24

@@ -3,6 +3,14 @@
 Audio Steganography embeds information within an audio file in a way that is 
 hardly noticable to humans for hiding a secret message.
 
+## Table of Contents
+
+- [Algorithms](#algorithms)
+- [Usage](#usage)
+- [Secret Message Input](#secret-message-input)
+- [Cover Audio Input](#cover-audio-input)
+- [References](#references)
+
 ## Algorithms
 
 1. Least Significant Bit (LSB) Matching
@@ -36,9 +44,9 @@ hardly noticable to humans for hiding a secret message.
     >Decryption requires segmenting the embedded audio file and reading
     >the phase shifts of each segment.
 
-3. Bipolar Backward-Forward Echo Hiding
+3. Bipolar Backward-Forward Echo Hiding (BBFEH)
 
-    >Echo hiding embeds information in a signal by adding unnoticable echos
+    >Echo hiding embeds information in a signal by adding unnoticeable echos
     >corresponding to the bits of the message.
     >Symmetrical echo impulses of bipolar backward-forward echo hiding
     >increase its robustness compared to other echo hiding methods.
@@ -49,6 +57,43 @@ hardly noticable to humans for hiding a secret message.
 
     >Decryption consists of segmenting the audio file and retrieving the
     delay points of each segment to determine the message bit value.
+
+## Usage
+
+### Data Embedding
+
+Start the `audio_steganography` file in the MATLAB Command Window.
+
+Select the desired steganography algorithm and when prompted, enter 'E' to
+begin the encryption process.
+
+Select the desired cover audio and secret message file to embed.
+The encrypted output audio file will be saved in the `\output\` folder in the
+current working directory.
+
+### Data Extracting
+
+Start the `audio_steganography` file in the MATLAB Command Window.
+
+Select the desired steganography algorithm and when prompted, enter 'D' to
+begin the decryption process.
+
+Select the audio file to extract a hidden message from.
+The first two lines of the extracted message will print in the MATLAB Command
+Window. A `.txt` file with the full extracted message will be saved in the
+`\output\` folder in the current working directory.
+
+The output `.txt` filename follows the format `decrypted_<algorithm>_msg.txt`
+where
+
+    LSB Matching 'algorithm' = 'lsb'
+    Phase Coding 'algorithn' = 'pc'
+    BBFEH 'algorithm' = 'bbfeh'
+
+
+### Dependencies
+
+MATLAB's "Symbolic Math Toolbox" add-on required.
 
 ## Secret Message Input
 
@@ -70,7 +115,7 @@ represents the size of the cover audio file in bytes.
 Each character requires 12 bits.
 The maximum characters permitted is calculated by 
 
-$$max_1 = \lfloor\frac{\frac{L}{4}  * (S - 1)}{12}\rfloor$$
+$$max_1 = \biggl\lfloor\frac{\frac{L}{4}(S - 1)}{12}\biggr\rfloor$$
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where
 $S = \frac{size_{cover}}{L}$ and $size_{cover}$ respresents size of the cover

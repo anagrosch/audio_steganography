@@ -3,7 +3,7 @@
 % Performs LSB Matching, Phase Coding, BBFEH Method(s)
 % 
 
-close all; clear all; clc;
+close all; clear variables; clc;
 lsb = LSBMatchingContainer;
 pc = PhaseCodingContainer;
 bbfeh = BBFEchoHidingContainer;

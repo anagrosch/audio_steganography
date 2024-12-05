@@ -9,7 +9,7 @@ classdef LSBMatchingContainer
             msg(end + 1) = 3; % add end-of-text
             msgBin = char(join(string(dec2bin(msg,7)),'')); %combine binary into 1 char array
 
-            fprintf("Encrypting audio file...");
+            fprintf("Embedding audio file...");
             startPoint = 0; %embedding starting point
             if strcmp(output.ext,'.wav')
                 startPoint = 46; %start after header of .wav
@@ -38,7 +38,7 @@ classdef LSBMatchingContainer
 
         % Decrypt hidden message with LSB steganography
         function msg = lsbDecrypt(input, ext)
-            fprintf("Decrypting audio file...");
+            fprintf("Extracting message from audio file...");
             startPoint = 0; %embedding starting point
             if strcmp(ext,'.wav')
                 startPoint = 46; %start after header of .wav
